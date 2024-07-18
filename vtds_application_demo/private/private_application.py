@@ -105,9 +105,9 @@ class PrivateApplication:
                 'script': path_join(os.sep, 'root', SCS_DEPLOY_SCRIPT_NAME),
             }
         }
-        for node_type in node_files.keys():
-            files = node_files[node_type]['script_files']
-            deploy_script = node_files[node_type]['script']
+        for node_type, data in node_files.items():
+            files = data['script_files']
+            deploy_script = data['script']
             with virtual_nodes.ssh_connect_nodes([node_type]) as connections:
                 for filename, tag in files:
                     source = script(filename)
