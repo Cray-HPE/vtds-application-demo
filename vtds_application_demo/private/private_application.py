@@ -23,9 +23,19 @@
 """Private layer implementation module for the demo application.
 
 """
+import os
+from os.path import join as path_join
 
 from vtds_base import (
     ContextualError,
+    info_msg
+)
+from . import (
+    FSM_MOCK_NAME,
+    SCS_MOCK_NAME,
+    FSM_DEPLOY_SCRIPT_NAME,
+    SCS_DEPLOY_SCRIPT_NAME,
+    script
 )
 
 
@@ -52,7 +62,6 @@ class PrivateApplication:
 
         """
         self.prepared = True
-        print("Preparing vtds-application-demo")
 
     def validate(self):
         """Run the terragrunt plan operation on a prepared demo
@@ -65,7 +74,6 @@ class PrivateApplication:
                 "cannot validate an unprepared application, "
                 "call prepare() first"
             )
-        print("Validating vtds-application-demo")
 
     def deploy(self):
         """Deploy operation. This drives the deployment of application
@@ -77,7 +85,55 @@ class PrivateApplication:
             raise ContextualError(
                 "cannot deploy an unprepared application, call prepare() first"
             )
-        print("Deploying vtds-application-demo")
+        # Open up connections to all of the vTDS Virtual Nodes so I can
+        # reach SSH (port 22) on each of them to copy in files and run
+        # the deployment script.
+        virtual_nodes = self.stack.get_cluster_api().get_virtual_nodes()
+        node_files = {
+            'fsm_node': {
+                'script_files': [
+                    (FSM_MOCK_NAME, 'fsm-mock'),
+                    (FSM_DEPLOY_SCRIPT_NAME, 'fsm-deploy'),
+                ],
+                'script': path_join(os.sep, 'root', FSM_DEPLOY_SCRIPT_NAME),
+            },
+            'scs_node': {
+                'script_files': [
+                    (SCS_MOCK_NAME, 'scs-mock'),
+                    (SCS_DEPLOY_SCRIPT_NAME, 'scs-deploy'),
+                ],
+                'script': path_join(os.sep, 'root', SCS_DEPLOY_SCRIPT_NAME),
+            }
+        }
+        for node_type in node_files.keys():
+            files = node_files[node_type]['script_files']
+            deploy_script = node_files[node_type]['script']
+            with virtual_nodes.ssh_connect_nodes([node_type]) as connections:
+                for filename, tag in files:
+                    source = script(filename)
+                    dest = path_join(os.sep, 'root', filename)
+                    info_msg(
+                        "copying '%s' to Virtual Nodes of type %s "
+                        "'%s'" % (
+                            source, node_type, dest
+                        )
+                    )
+                    connections.copy_to(
+                        source, dest,
+                        recurse=False, logname="upload-application-%s-to" % tag
+                    )
+                    cmd = (
+                        "chmod 755 %s;" % deploy_script +
+                        "python3 " +
+                        "%s " % deploy_script
+                    )
+                info_msg(
+                    "running '%s' on Virtual Nodes of type %s" %
+                    (
+                        cmd, node_type
+                    )
+                )
+                connections.run_command(cmd, "run-app-deploy-script-on")
 
     def remove(self):
         """Remove operation. This will remove all resources
@@ -88,4 +144,3 @@ class PrivateApplication:
             raise ContextualError(
                 "cannot deploy an unprepared application, call prepare() first"
             )
-        print("Removing vtds-application-demo")

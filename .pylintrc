@@ -55,6 +55,7 @@ confidence=
 disable=
     too-few-public-methods,
     consider-using-f-string,
+    duplicate-code
 
 
 [REPORTS]

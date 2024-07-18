@@ -39,6 +39,8 @@ description = 'Demo Application Layer Plugin for the Virtual Test Development Sy
 dependencies = [
     'pyyaml~=6.0',
     'vtds_base~=0.0',
+    'flask~=3.0',
+    'requests~=2.32',
 ]
 
 dynamic = ['version']

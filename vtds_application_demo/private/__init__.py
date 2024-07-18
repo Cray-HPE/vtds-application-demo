@@ -28,4 +28,20 @@ from os.path import (
     join as path_join,
     dirname
 )
-CONFIG_DIR = path_join(dirname(__file__), "config")
+CONFIG_DIR = path_join(dirname(__file__), 'config')
+FSM_MOCK_NAME = 'fsm.py'
+SCS_MOCK_NAME = 'scs.py'
+FSM_DEPLOY_SCRIPT_NAME = 'deploy_application_to_fsm_node.py'
+SCS_DEPLOY_SCRIPT_NAME = 'deploy_application_to_scs_node.py'
+SCRIPT_DIR_PATH = path_join(
+    dirname(__file__),
+    'scripts',
+)
+
+
+def script(filename):
+    """Translate a file name into a full path name to a file in the
+    scripts directory.
+
+    """
+    return path_join(SCRIPT_DIR_PATH, filename)
