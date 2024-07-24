@@ -24,15 +24,16 @@
 
 """
 
+from os import sep as separator
 from os.path import (
     join as path_join,
     dirname
 )
 CONFIG_DIR = path_join(dirname(__file__), 'config')
+APP_CONFIG_NAME = 'application_core_config.yaml'
 FSM_MOCK_NAME = 'fsm.py'
 SCS_MOCK_NAME = 'scs.py'
-FSM_DEPLOY_SCRIPT_NAME = 'deploy_application_to_fsm_node.py'
-SCS_DEPLOY_SCRIPT_NAME = 'deploy_application_to_scs_node.py'
+DEPLOY_SCRIPT_NAME = 'deploy_application_to_node.py'
 SCRIPT_DIR_PATH = path_join(
     dirname(__file__),
     'scripts',
@@ -45,3 +46,10 @@ def script(filename):
 
     """
     return path_join(SCRIPT_DIR_PATH, filename)
+
+def home(filename):
+    """Translate a filename into a full path on a remote host that is
+    in the 'root' home directory.
+
+    """
+    return path_join(separator, "root", filename)
