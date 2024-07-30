@@ -30,6 +30,12 @@ from getopt import (
 )
 import json
 import sys
+from logging import (
+    getLogger,
+    FileHandler,
+    DEBUG
+)
+from daemonize import Daemonize
 from flask import (
     Flask,
     request
@@ -54,6 +60,10 @@ class UsageError(Exception):  # pylint: disable=too-few-public-methods
     """
 
 
+PIDFILE = "/var/run/mock-scs.pid"
+LOGFILE = "/var/log/mock-scs"
+APPNAME = "mock-scs"
+
 JSON_HEADERS = {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -63,7 +73,7 @@ TEXT_HEADERS = {
     'Accept': 'text/plain'
 }
 # pylint: disable=invalid-name
-server_port = "5000"
+server_port = 5000
 
 app = Flask(__name__)
 
@@ -205,28 +215,65 @@ def fsm():
     )
 
 
-def main(argv):
-    """Main entry point for the mock SCS
+def run():
+    """Daemonize entrypoint
 
     """
     # pylint: disable=global-statement
     global server_port
+    host = '0.0.0.0'
     try:
-        optlist, _ = getopt(
-            argv,
-            "p:h",
-        )
+        optlist, _ = getopt(sys.argv[1:], "p:dh")
+    except GetoptError as err:
+        raise UsageError(str(err)) from err
+    # Get the server parameters from the command line (ignore stuff we
+    # aren't going to use here).
+    for opt, arg in optlist:
+        if opt in ['-p']:
+            # The argument was vetted in main() before we got here, no
+            # need to do it here...
+            server_port = str(int(arg))
+    app.run(host=host, port=server_port)
+
+
+def main():
+    """Main entry point for the mock FSM
+
+    """
+    # Validate options and pick off the debug option here... The rest
+    # of the options will be handled in the run function once we
+    # daemonize.
+    debug = False
+    try:
+        optlist, _ = getopt(sys.argv[1:], "p:dh")
     except GetoptError as err:
         raise UsageError(str(err)) from err
     for opt, arg in optlist:
         if opt in ['-p']:
             try:
-                server_port = str(int(arg))
+                _ = str(int(arg))
             except ValueError as err:
                 raise UsageError(
                     "server port ('%s') must be an integer value" % arg
                 ) from err
-    app.run(host='0.0.0.0', port=server_port)
+        elif opt in ['-h']:
+            raise UsageError()
+        elif opt in ['-d']:
+            debug = True
+        else:
+            raise UsageError("unknown option '%s'" % arg)
+    logger = getLogger(__name__)
+    logger.setLevel(DEBUG)
+    logger.propagate = False
+    loghandler = FileHandler(LOGFILE, 'w')
+    loghandler.setLevel(DEBUG)
+    logger.addHandler(loghandler)
+    keep_fds = [loghandler.stream.fileno()]
+    daemon = Daemonize(
+        app=APPNAME, pid=PIDFILE, action=run,
+        keep_fds=keep_fds, foreground=debug
+    )
+    daemon.start()
 
 
 def entrypoint(usage_msg, main_func):
@@ -238,7 +285,7 @@ def entrypoint(usage_msg, main_func):
 
     """
     try:
-        main_func(sys.argv[1:])
+        main_func()
     except ContextualError as err:
         write_err("ERROR: %s\n" % str(err))
         sys.exit(1)
@@ -248,11 +295,16 @@ def entrypoint(usage_msg, main_func):
 
 if __name__ == '__main__':
     USAGE_MSG = """
-usage: scs [-p SERVER_PORT]
+usage: scs [-p SERVER_PORT][-d][-h]
 
 Where:
 
-    SERVER_PORT is the port on which the mock SCS should listen on the
-                node.
+    -p SERVER_PORT
+       specifies the port on which the mock SCS should listen.
+    -d
+       turns on debug mode and causes the mock SCS to run in the
+       foreground instead of in daemon mode
+    -h
+       displays this usage message
 """[1:-1]
     entrypoint(USAGE_MSG, main)

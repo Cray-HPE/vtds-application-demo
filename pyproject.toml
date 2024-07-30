@@ -41,6 +41,7 @@ dependencies = [
     'vtds_base~=0.0',
     'flask~=3.0',
     'requests~=2.32',
+    'daemonize~=2.5'
 ]
 
 dynamic = ['version']
