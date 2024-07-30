@@ -47,6 +47,7 @@ def script(filename):
     """
     return path_join(SCRIPT_DIR_PATH, filename)
 
+
 def home(filename):
     """Translate a filename into a full path on a remote host that is
     in the 'root' home directory.

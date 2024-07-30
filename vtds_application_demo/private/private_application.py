@@ -119,10 +119,15 @@ class PrivateApplication:
         down into the application layer to be ready for deployment.
 
         """
+        virtual_networks = self.stack.get_cluster_api().get_virtual_networks()
         virtual_nodes = self.stack.get_cluster_api().get_virtual_nodes()
         node_classes = virtual_nodes.node_classes()
         node_networks = {
-            node_class: virtual_nodes.network_names(node_class)
+            node_class: [
+                network_name
+                for network_name in virtual_nodes.network_names(node_class)
+                if not virtual_networks.non_cluster_network(network_name)
+            ]
             for node_class in node_classes
         }
         host_ips = {

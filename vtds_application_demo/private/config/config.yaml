@@ -1,1 +1,10 @@
-application: {}
+application:
+  python_deps:
+    fsm:
+      - daemonize~=2.5
+      - flask~=3.0
+      - requests~=2.32
+    scs:
+      - daemonize~=2.5
+      - flask~=3.0
+      - requests~=2.32
