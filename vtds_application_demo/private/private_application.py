@@ -192,7 +192,9 @@ class PrivateApplication:
                     cmd = (
                         "chmod 755 %s;" % deploy_script +
                         "python3 " +
-                        "%s " % deploy_script
+                        "%s " % deploy_script +
+                        "{{ node_class }} " +
+                        home(APP_CONFIG_NAME)
                     )
                 info_msg(
                     "running '%s' on Virtual Nodes of type %s" %
