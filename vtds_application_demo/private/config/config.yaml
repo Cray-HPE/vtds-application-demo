@@ -1,4 +1,8 @@
 application:
+  debian_packages:
+    - python3-venv
+    - jq
+    - curl
   python_deps:
     fsm:
       - daemonize~=2.5
