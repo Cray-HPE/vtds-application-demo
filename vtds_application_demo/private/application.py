@@ -31,6 +31,7 @@ from vtds_base import (
     ContextualError,
     info_msg
 )
+from vtds_base.layers.application import ApplicationAPI
 from . import (
     APP_CONFIG_NAME,
     FSM_MOCK_NAME,
@@ -41,7 +42,7 @@ from . import (
 )
 
 
-class PrivateApplication:
+class Application(ApplicationAPI):
     """PrivateApplication class, implements the demo application layer
     accessed through the python Application API.
 
@@ -53,7 +54,12 @@ class PrivateApplication:
         caller that will drive all activities at all layers.
 
         """
-        self.config = config
+        self.__doc__ = ApplicationAPI.__doc__
+        self.config = config.get('application', None)
+        if self.config is None:
+            raise ContextualError(
+                "no application configuration found in top level configuration"
+            )
         self.stack = stack
         self.build_dir = build_dir
         self.app_config_path = path_join(self.build_dir, APP_CONFIG_NAME)
@@ -114,11 +120,6 @@ class PrivateApplication:
         }
 
     def prepare(self):
-        """Prepare operation. This drives creation of the application
-        layer definition and any configuration that need to be driven
-        down into the application layer to be ready for deployment.
-
-        """
         virtual_networks = self.stack.get_cluster_api().get_virtual_networks()
         virtual_nodes = self.stack.get_cluster_api().get_virtual_nodes()
         node_classes = virtual_nodes.node_classes()
@@ -149,11 +150,6 @@ class PrivateApplication:
         self.prepared = True
 
     def validate(self):
-        """Run the terragrunt plan operation on a prepared demo
-        application layer to make sure that the configuration produces a
-        useful result.
-
-        """
         if not self.prepared:
             raise ContextualError(
                 "cannot validate an unprepared application, "
@@ -161,11 +157,6 @@ class PrivateApplication:
             )
 
     def deploy(self):
-        """Deploy operation. This drives the deployment of application
-        layer resources based on the layer definition. It can only be
-        called after the prepare operation (prepare()) completes.
-
-        """
         if not self.prepared:
             raise ContextualError(
                 "cannot deploy an unprepared application, call prepare() first"
@@ -205,10 +196,6 @@ class PrivateApplication:
                 connections.run_command(cmd, "run-app-deploy-script-on")
 
     def remove(self):
-        """Remove operation. This will remove all resources
-        provisioned for the application layer.
-
-        """
         if not self.prepared:
             raise ContextualError(
                 "cannot deploy an unprepared application, call prepare() first"
