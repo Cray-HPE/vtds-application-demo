@@ -33,11 +33,6 @@ COVERAGE_FAIL = 95
 
 PYTHON = ['3']
 
-EXTRA_INDEX = (
-    "--extra-index-url="
-    "https://artifactory.algol60.net/artifactory/csm-python-modules/simple"
-)
-
 @nox.session(python=PYTHON)
 def lint(session):
     """Run linters.
@@ -50,7 +45,7 @@ def lint(session):
         'vtds_application_demo/private/scripts'
     ]
     if session.python:
-        session.install(EXTRA_INDEX, '.[lint]')
+        session.install('.[lint]')
     session.run(*run_cmd)
 
 
@@ -67,7 +62,7 @@ def style(session):
     ]
  
     if session.python:
-        session.install(EXTRA_INDEX, '.[style]')
+        session.install('.[style]')
     session.run(*run_cmd)
 
 
@@ -78,7 +73,7 @@ def tests(session):
     # Install all test dependencies, then install this package in-place.
     path = 'tests'
     if session.python:
-        session.install(EXTRA_INDEX, '.[test]')
+        session.install('.[test]')
 
     # XXX - disable tests until we have some...
     session.run('/usr/bin/true', external=True)
@@ -107,7 +102,7 @@ def cover(session):
     test runs, and then erases coverage data.
     """
     if session.python:
-        session.install(EXTRA_INDEX, '.[cover]')
+        session.install('.[cover]')
     # Disable coverage tests until we have some...
     session.run('/usr/bin/true', external=True)
 #    session.run('coverage', 'report', '--show-missing',
